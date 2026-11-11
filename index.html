@@ -22,14 +22,16 @@ body {
   background-color: #ffeff5;
 }
 
-#player-container {
+#player-container { /*반응형 크기*/
   position: absolute;
   top: 50%;
   right: 0;
   left: 0;
-  width: 430px;
+  width: 100%;
+  max-width: 430px;
   height: 100px;
   margin: -4px auto;
+  box-sizing: border-box;
 }
 
 #player-bg-artwork {
@@ -280,12 +282,13 @@ body {
   opacity: 1;
 }
 
-#player-controls {
-  width: 250px;
+#player-controls { /*반응형 크기*/
+  width: calc(100% - 141px);
   height: 100%;
   margin: 0 5px 0 141px;
   float: right;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .control {
@@ -323,6 +326,35 @@ body {
 .button:hover i {
   color: #fff;
 }
+
+@media (max-width: 400px) { /*반응형 크기*/
+  #player-track {
+    padding-left: 145px;
+    padding-right: 15px;
+  }
+
+  #album-art {
+    width: 95px;
+    height: 95px;
+    margin-left: 25px;
+  }
+
+  #player-controls {
+    margin-left: 115px;
+    width: calc(100% - 120px);
+  }
+
+  .button {
+    width: 20px;
+    height: 20px;
+    padding: 15px;
+  }
+
+  .button i {
+    font-size: 20px;
+  }
+}
+
 </style>
 </head>
 <body>
