@@ -9,8 +9,8 @@
   <style>
     :root {
       color-scheme: light;
-      --background: #ffffff;
-      --surface-1: #808080;
+      --background: #a03333;
+      --surface-1: #82817D;
       --surface-2: #696969;
       --Foreground: #ffffff;
       --muted: #d1d1d1;
@@ -42,14 +42,39 @@
       font-family: "Segoe UI", "Noto Sans KR", sans-serif;
     }
 
+    /* Layout */
+    .flex-center {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Animation */
+    button {
+      color: inherit;
+      transition: background 0.2s ease, transform 0.3s ease, opacity 0.3s ease;
+
+      &:hover,
+      &.active {
+        transform: scale(0.95);
+        opacity: 0.7;
+      }
+    }
+
+    /* Typography */
+    .text-ellipsis {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    /* Interaction */
     button,
     input {
       font: inherit;
     }
 
-    button {
-      color: inherit;
-    }
+    /* Components */
 
     .container {
       width: min(100%, 600px);
@@ -76,42 +101,51 @@
       display: flex;
       align-items: center;
       gap: 20px;
-    }
 
-    .cover {
-      width: 50%;
-      aspect-ratio: 1;
-      object-fit: cover;
-      border-radius: 12px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    }
+      .cover {
+        width: 50%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
 
-    .track {}
+      .track {
+        .category {
+          margin: 0 0 12px 0;
+          letter-spacing: .2em;
+        }
 
-    .category {
-      margin: 0 0 12px 0;
-      letter-spacing: .2em;
-    }
+        #title {}
 
-    #title {}
-
-    #artist {
-      font-size: 12px;
-      color: var(--muted);
+        #artist {
+          font-size: 12px;
+          color: var(--muted);
+        }
+      }
     }
 
     /* 조작 바 */
     .playing__actions {
       margin-top: 16px;
+
+      .times {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        color: var(--muted);
+        font-size: 10px;
+      }
+
+      .controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 16px 0 0 0;
+      }
     }
 
-    .times {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-      color: var(--muted);
-      font-size: 10px;
-    }
+
 
     input[type="range"] {
       appearance: none;
@@ -121,34 +155,32 @@
       border-radius: 4px;
       background: linear-gradient(to right, var(--Foreground) var(--fill, 0%), var(--border) var(--fill, 0%));
       cursor: pointer;
+
+      &::-webkit-slider-thumb {
+        appearance: none;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid var(--border);
+        background: var(--Foreground);
+        box-shadow: 0 0 0 1px var(--Foreground);
+      }
+
+      &::-moz-range-thumb {
+        appearance: none;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        border: 2px solid var(--border);
+        background: var(--Foreground);
+        box-shadow: 0 0 0 1px var(--Foreground);
+      }
     }
 
-    input[type="range"]::-webkit-slider-thumb {
-      appearance: none;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      border: 2px solid var(--border);
-      background: var(--Foreground);
-      box-shadow: 0 0 0 1px var(--Foreground);
-    }
 
-    input[type="range"]::-moz-range-thumb {
-      appearance: none;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      border: 2px solid var(--border);
-      background: var(--Foreground);
-      box-shadow: 0 0 0 1px var(--Foreground);
-    }
 
-    .controls {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 16px 0 0 0;
-    }
+
+
 
     .button {
       width: 36px;
@@ -159,31 +191,38 @@
       color: var(--muted);
       cursor: pointer;
       flex-shrink: 0;
+
+      &.button--primary {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--Foreground);
+        color: var(--surface-1);
+      }
+
+      &:hover {
+        color: var(--Foreground);
+        background: var(--muted);
+      }
     }
 
-    .button--primary {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: var(--Foreground);
-      color: var(--surface-1);
-    }
 
-    .button:hover {
-      color: var(--Foreground);
-      background: var(--muted);
-    }
+
+
+
 
     .wrapper__library {
       background: var(--surface-2);
+
+      #library__list {
+        margin: 16px 0 0 0;
+        max-height: 190px;
+        overflow: auto;
+        list-style: none;
+      }
     }
 
-    #library__list {
-      margin: 16px 0 0 0;
-      max-height: 190px;
-      overflow: auto;
-      list-style: none;
-    }
+
 
     #library__list::-webkit-scrollbar {
       width: 6px;
@@ -211,39 +250,36 @@
       background: transparent;
       border: 0;
       border-radius: 12px;
-      transition: background 0.2s ease, transform 0.3s ease, opacity 0.3s ease;
 
       position: relative;
-    }
 
-    .song:not(:last-child)::after {
-      content: "";
-      position: absolute;
-      bottom: 0;
-      left: 8px;
-      right: 8px;
-      height: 2px;
-      background: linear-gradient(to right, transparent, var(--primary), transparent);
-    }
+      &:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 8px;
+        right: 8px;
+        height: 2px;
+        background: linear-gradient(to right, transparent, var(--primary), transparent);
+      }
 
-    .song:hover,
-    .song.active {
-      background: var(--surface-1);
-      transform: scale(0.95);
-      opacity: 0.5;
-    }
+      .song-number,
+      .song-duration {
+        color: var(--muted);
+        font-size: 10px;
+      }
 
-    .song-number,
-    .song-duration {
-      color: var(--muted);
-      font-size: 10px;
-    }
+      .song-name {
+        font-size: 14px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
 
-    .song-name {
-      font-size: 14px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      &:hover,
+      &.active {
+        background: var(--surface-1);
+      }
     }
 
     @media (max-width: 450px) {
