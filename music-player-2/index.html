@@ -25,17 +25,9 @@
       --text-md: 12px;
       --text-lg: 18px;
       --text-xl: 32px;
-    }
 
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --background: black;
-      }
-    }
-
-    @media (prefers-color-scheme: light) {
-      :root {
-        --background: white;
+      @media (prefers-color-scheme: dark) {
+        --background: #191919;
       }
     }
 
@@ -143,6 +135,26 @@
     /* Animation */
 
     /* Components */
+    .button {
+      width: 40px;
+      aspect-ratio: 1;
+      border-radius: 8px;
+      color: var(--muted);
+      flex-shrink: 0;
+      font-size: 20px;
+
+      &.play-button {
+        width: 48px;
+        border-radius: 50%;
+        background: var(--Foreground);
+        color: var(--surface-1);
+      }
+
+      &:hover {
+        background: var(--muted);
+        color: var(--Foreground);
+      }
+    }
 
 
     .container {
@@ -211,24 +223,8 @@
         gap: 8px;
         margin: 16px 0 0 0;
 
-        .button {
-          width: 36px;
-          aspect-ratio: 1;
-          border-radius: 8px;
-          color: var(--muted);
-          flex-shrink: 0;
-
-          &.button--primary {
-            width: 44px;
-            border-radius: 50%;
-            background: var(--Foreground);
-            color: var(--surface-1);
-          }
-
-          &:hover {
-            background: var(--muted);
-            color: var(--Foreground);
-          }
+        #actions__volume {
+          margin: 0 10px 0 10px;
         }
       }
     }
@@ -301,11 +297,12 @@
       }
 
       .playing__actions {
-        margin-top: 6px;
-      }
+        margin-top: 8px;
 
-      .controls {
-        margin-top: 6px;
+        .controls {
+          margin-top: 12px;
+          gap: 16px;
+        }
       }
 
       .library__header h3 {
@@ -337,7 +334,7 @@
           <input id="actions__volume" type="range" min="0" max="1" step="0.01" value="0.1" aria-label="볼륨바">
           <button class="button" id="previous" aria-label="이전 곡"><i class="fa-solid fa-backward"></i></button>
           <button class="button" id="next" aria-label="다음 곡"><i class="fa-solid fa-forward"></i></button>
-          <button class="button button--primary" id="play" aria-label="재생"><i class="fa-solid fa-play"></i></button>
+          <button class="button play-button" id="play" aria-label="재생"><i class="fa-solid fa-play"></i></button>
         </div>
       </div>
     </section>
