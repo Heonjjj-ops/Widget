@@ -81,11 +81,11 @@
     }
 
     input {
+      appearance: none;
       font: inherit;
       cursor: pointer;
 
       &[type="range"] {
-        appearance: none;
         width: 100%;
         height: 3px;
         display: block;
@@ -166,7 +166,7 @@
     }
 
     .wrapper__playing,
-    .wrapper__library {
+    .wrapper__playlist {
       padding: 24px;
       display: flex;
       flex-direction: column;
@@ -184,9 +184,9 @@
       gap: 20px;
 
       .cover {
+        object-fit: cover;
         width: 50%;
         aspect-ratio: 1;
-        object-fit: cover;
         border-radius: 12px;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
       }
@@ -221,18 +221,18 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        margin: 16px 0 0 0;
+        margin: 16px 12px 0 12px;
 
-        #actions__volume {
-          margin: 0 10px 0 10px;
+        #volume {
+          margin: 0 8px 0 0;
         }
       }
     }
 
-    .wrapper__library {
+    .wrapper__playlist {
       background: var(--surface-2);
 
-      #library__list {
+      #Playlist__list {
         margin: 16px 0 0 0;
         max-height: 190px;
         overflow: auto;
@@ -291,9 +291,8 @@
       }
 
       .wrapper__playing,
-      .wrapper__library {
+      .wrapper__playlist {
         min-height: 0;
-        padding: 18px;
       }
 
       .playing__actions {
@@ -305,11 +304,11 @@
         }
       }
 
-      .library__header h3 {
+      .Playlist__header {
         display: none;
       }
 
-      #library__list {
+      #Playlist__list {
         margin-top: 0px;
       }
     }
@@ -329,22 +328,22 @@
       </div>
       <div class="playing__actions">
         <div class="times"><span id="elapsed">0:00</span><span id="duration">0:00</span></div>
-        <input id="actions__seek" type="range" min="0" max="1000" value="0" aria-label="재생바">
+        <input id="seek" type="range" min="0" max="1000" value="0" aria-label="재생바">
         <div class="controls">
-          <input id="actions__volume" type="range" min="0" max="1" step="0.01" value="0.1" aria-label="볼륨바">
+          <input id="volume" type="range" min="0" max="0.3" step="0.01" value="0.1" aria-label="볼륨바">
           <button class="button" id="previous" aria-label="이전 곡"><i class="fa-solid fa-backward"></i></button>
           <button class="button" id="next" aria-label="다음 곡"><i class="fa-solid fa-forward"></i></button>
           <button class="button play-button" id="play" aria-label="재생"><i class="fa-solid fa-play"></i></button>
         </div>
       </div>
     </section>
-    <section class="wrapper__library">
-      <div class="library__header">
+    <section class="wrapper__playlist">
+      <div class="Playlist__header">
         <h3 style="font-weight: 600;">Playlist
           <span id="count" style="color:var(--muted);font-size:12px;font-weight:400">0</span>
         </h3>
       </div>
-      <ul id="library__list"></ul>
+      <ul id="Playlist__list"></ul>
     </section>
   </main>
   <audio id="audio" preload="metadata"></audio>
@@ -352,13 +351,15 @@
   <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.0.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsmediatags@3.9.7/dist/jsmediatags.min.js"></script>
   <script>
+    const MAX_VOLUME = 100;
+    const DEFAULT_VOLUME = 50;
+    const TRACK_COUNT = 6;
 
-    const seek = document.querySelector("#actions__seek");
-    const volume = document.querySelector("#actions__volume");
+    const seek = document.querySelector("#seek");
+    const volume = document.querySelector("#volume");
     const playIcon = document.querySelector("#play i");
-    const playlist = document.querySelector("#library__list");
+    const playlist = document.querySelector("#Playlist__list");
     const audio = document.querySelector("#audio");
-
     const tracks = [
       { url: "https://bit.ly/4C2KWaY" },
       { url: "https://bit.ly/4zMfcWk" },
@@ -368,18 +369,12 @@
       { url: "https://bit.ly/4sYC7Lj" }
     ];
 
-    let current = -1;
+    let currentTrack = -1;
 
-    // 시간 표시
-    function formatTime(seconds) {
-      if (!Number.isFinite(seconds)) return "0:00";
+    // jsmediatags: 제목과 아티스트 가져오기
+    // audio: 재생 시간과 현재 재생 위치 가져오기
 
-      return `${Math.floor(seconds / 60)}:${String(
-        Math.floor(seconds % 60)
-      ).padStart(2, "0")}`;
-    }
-
-    // 메타데이터 읽기
+    // jsmediatags 메타데이터 읽기
     function loadTrackInfo(track) {
       return new Promise((resolve) => {
 
@@ -396,9 +391,6 @@
 
           onError: function (error) {
             console.error("메타데이터 오류 발생");
-            console.error("오류 유형:", error.type);
-            console.error("오류 내용:", error.info);
-            console.error("전체 오류:", error);
 
             resolve({
               ...track,
@@ -410,50 +402,72 @@
       });
     }
 
-    // 재생목록 표시
+    // 곡 길이 메타데이터 가져오기
+    function loadTrackDuration(track) {
+      return new Promise((resolve) => {
+        const tempAudio = new Audio();
+
+        tempAudio.preload = "metadata"; // 미리 불러올 범위 설정
+
+        tempAudio.addEventListener("loadedmetadata", () => {
+          resolve(tempAudio.duration);
+        }, { once: true });
+
+        tempAudio.addEventListener("error", () => {
+          resolve(undefined);
+        }, { once: true });
+
+        tempAudio.src = track.url; // 오디오 파일 읽기 요청
+      });
+    }
+
+    // 시간 표시
+    function formatTime(seconds) {
+      if (!Number.isFinite(seconds)) return "0:00";
+
+      return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
+    }
+
+    // 재생목록 화면 생성/갱신
     function renderPlaylist() {
       document.querySelector("#count").textContent = tracks.length;
 
-      playlist.replaceChildren();
+      playlist.replaceChildren(); // 갱신을 위해 지움
 
       tracks.forEach((track, index) => {
         const button = document.createElement("button");
+        button.className = `song${index === currentTrack ? " active" : ""}`;
+        button.type = "button"; // 타입명시 submit으로 만들수도 있음
 
-        button.className =
-          `song${index === current ? " active" : ""}`;
+        const number = document.createElement("span");
+        number.className = "song-number";
+        number.textContent = index + 1;
 
-        button.type = "button";
+        const name = document.createElement("span");
+        name.className = "song-name";
+        name.textContent = track.title;
 
-        button.innerHTML = `
-      <span class="song-number">${String(index + 1).padStart(2, "0")}</span>
-      <span class="song-name"></span>
-      <span class="song-duration">${formatTime(track.duration)}</span>
-    `;
+        const duration = document.createElement("span");
+        duration.className = "song-duration";
+        duration.textContent = formatTime(track.duration);
 
-        button.querySelector(".song-name").textContent = track.title;
+        button.append(number, name, duration);
 
         button.addEventListener("click", () => playTrack(index));
-
         playlist.append(button);
       });
     }
 
-    // 곡 재생
+    // 음악 재생
     function playTrack(index) {
       if (index < 0 || index >= tracks.length) return;
 
-      current = index;
+      currentTrack = index;
 
       audio.src = tracks[index].url;
 
-      document.querySelector("#title").textContent =
-        tracks[index].title;
-
-      document.querySelector("#artist").textContent =
-        tracks[index].artist;
-
-      document.querySelector("#elapsed").textContent = "0:00";
-      document.querySelector("#duration").textContent = "0:00";
+      document.querySelector("#title").textContent = tracks[index].title;
+      document.querySelector("#artist").textContent = tracks[index].artist;
 
       seek.value = 0;
       setRangeFill(seek);
@@ -474,9 +488,9 @@
       input.style.setProperty("--fill", `${percent}%`);
     }
 
-    // 재생 / 일시정지
+    // 재생/일시정지
     document.querySelector("#play").addEventListener("click", () => {
-      if (current === -1) {
+      if (currentTrack === -1) {
         if (tracks.length) playTrack(0);
         return;
       }
@@ -488,28 +502,24 @@
       }
     });
 
-    // 이전 곡
+    // 이전 곡 재생
     document.querySelector("#previous").addEventListener("click", () => {
-      if (current > 0) {
-        playTrack(current - 1);
-      }
+      if (tracks.length === 0) return;
+      playTrack((currentTrack - 1 + tracks.length) % tracks.length);
     });
 
-    // 다음 곡
+    // 다음 곡 재생
     document.querySelector("#next").addEventListener("click", () => {
-      if (current < tracks.length - 1) {
-        playTrack(current + 1);
-      }
+      if (tracks.length === 0) return;
+      playTrack((currentTrack + 1) % tracks.length);
     });
 
     // 음악 정보 로드
-    audio.addEventListener("loadedmetadata", () => {
-      if (current < 0) return;
-
-      tracks[current].duration = audio.duration;
+    audio.addEventListener("loadedmetadata", () => { // 브라우저가 발생시키는 이벤트 / audio.src
+      if (currentTrack < 0) return;
 
       document.querySelector("#duration").textContent =
-        formatTime(audio.duration);
+        formatTime(tracks[currentTrack].duration);
 
       renderPlaylist();
     });
@@ -526,7 +536,7 @@
       setRangeFill(seek);
     });
 
-    // 재생 아이콘 일시정지 아이콘으로 변경
+    // 재생 아이콘 변경
     audio.addEventListener("play", () => {
       playIcon.classList.replace("fa-play", "fa-pause");
       document.querySelector("#play").setAttribute("aria-label", "일시정지");
@@ -536,11 +546,19 @@
       document.querySelector("#play").setAttribute("aria-label", "재생");
     });
 
-    // 곡 종료 시 다음 곡
+    // 음악 종료 이벤트
     audio.addEventListener("ended", () => {
-      if (current < tracks.length - 1) {
-        playTrack(current + 1);
+      if (currentTrack < tracks.length - 1) {
+        playTrack(currentTrack + 1);
       }
+    });
+
+    // 오디오 오류 처리
+    audio.addEventListener("error", () => {
+      console.error(
+        "오디오 파일을 불러오지 못했습니다.",
+        audio.error
+      );
     });
 
     // 재생 위치 이동
@@ -549,23 +567,15 @@
         audio.currentTime =
           seek.value / 1000 * audio.duration;
       }
-
       setRangeFill(seek);
     });
 
-    // 볼륨
+    // 볼륨 조절
     volume.addEventListener("input", () => {
       audio.volume = volume.value;
       setRangeFill(volume);
     });
 
-    // 오디오 오류
-    audio.addEventListener("error", () => {
-      console.error(
-        "오디오 파일을 불러오지 못했습니다.",
-        audio.error
-      );
-    });
 
     // 초기화
     async function initializePlayer() {
@@ -574,20 +584,21 @@
       setRangeFill(seek);
       setRangeFill(volume);
 
-      // 메타데이터를 기다리지 않고 즉시 리스트 표시
-      renderPlaylist();
-
-      if (tracks.length > 0) {
-        document.querySelector("#title").textContent =
-          tracks[0].title;
-
-        document.querySelector("#artist").textContent =
-          tracks[0].artist;
-      }
+      renderPlaylist(); // 메타데이터를 기다리지 않고 즉시 리스트 표시
 
       // 메타데이터 비동기 로딩
       const loadedTracks = await Promise.all(
-        tracks.map(track => loadTrackInfo(track))
+        tracks.map(async (track) => {
+          const [info, duration] = await Promise.all([
+            loadTrackInfo(track),
+            loadTrackDuration(track)
+          ]);
+
+          return {
+            ...info,
+            duration
+          };
+        })
       );
 
       // 메타데이터 적용
@@ -596,9 +607,10 @@
       // 리스트 갱신
       renderPlaylist();
     }
-    initializePlayer();
 
-
+    initializePlayer().catch(error => {
+      console.error("플레이어 초기화 실패:", error);
+    });
   </script>
 </body>
 
